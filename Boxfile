@@ -1,0 +1,30 @@
+service: consul-test
+
+
+prototype:
+  default_consul: &default_consul
+    stack: ubuntu
+    packages:
+      - unzip
+    run:
+      - test -f 0.1.0_linux_amd64.zip || wget https://dl.bintray.com/mitchellh/consul/0.1.0_linux_amd64.zip
+      - test -x consul || unzip 0.1.0_linux_amd64.zip
+      - test -x /usr/local/bin/consul || sudo cp consul /usr/local/bin/consul
+      - sudo chown service:service /usr/local/bin/consul
+      - sudo chmod +x /usr/local/bin/consul
+  default_member: &default_member
+    <<: *default_consul
+    daemon: consul agent -server -data-dir /tmp/consul
+    run:
+      - consul join bootstrapper
+
+dev.paperg.com:
+  bootstrapper:
+    <<: *default_consul
+    daemon: consul agent -server -bootstrap -data-dir /tmp/consul
+  member2:
+    <<: *default_member
+  member3:
+    <<: *default_member
+
+
